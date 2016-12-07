@@ -4,9 +4,7 @@
 #include <QMainWindow>
 #include <QTcpSocket>
 #include <QDebug>
-#include <QString>
-#include <time.h>
-
+#include <QTimer>
 
 namespace Ui {
 class MainWindow;
@@ -20,37 +18,27 @@ public:
   explicit MainWindow(QWidget *parent = 0);
   ~MainWindow();
 
-  void tcpConnect();
-
 public slots:
   void putData();
-
 private slots:
+
+  void timerEvent(QTimerEvent *e);
+
+  void on_pushButton_clicked();
+
   void on_pushButton_Connect_clicked();
 
-  void lcdNumber_Max();
-
-  void lcdNumber_Min();
-
-  void lcdNumber_Time();
-
-  void print(QString strp);
-
-  bool stop();
+  void on_pushButton_Disconnect_clicked();
 
   void on_pushButton_Start_clicked();
 
-  void on_pushButton_Stop_clicked(bool checked);
+  void on_pushButton_Stop_clicked();
 
 private:
   Ui::MainWindow *ui;
   QTcpSocket *socket;
-
-  QString IP;
-  int Max, Min, Time;
-
-protected:
-
+  int timer;
 };
 
 #endif // MAINWINDOW_H
+
