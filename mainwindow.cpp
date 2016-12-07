@@ -1,166 +1,78 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QDateTime>
-#include <time.h>
-#include <unistd.h>
-/**
- * @brief MainWindow::MainWindow é o construtor da classe.
- * @param parent
- */
+#include <QTimer> // Classe que fornece temporizadores repetitivos e de uma única vez.
+
+
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
   ui(new Ui::MainWindow)
 {
-  ui -> setupUi(this);
+  ui->setupUi(this);
   socket = new QTcpSocket(this);
-  tcpConnect();
-
-
-  connect(ui -> pushButton_Start,
-          SIGNAL(clicked(bool)),
-          this,
-          SLOT(putData()));
 
 }
 
-/**
- * @brief MainWindow::tcpConnect é a classe de conexão ao servidor.
- */
-void MainWindow::tcpConnect(){
-  socket -> connectToHost(IP,1234);
-  if(socket -> waitForConnected(3000)){
-    qDebug() << "Connected";
-  }
-  else{
-    qDebug() << "Disconnected";
-  }
+void MainWindow::timerEvent(QTimerEvent *e){ // Função para ficar reenviando a cada tempo
+    putData();
 }
 
-//Comentand
-
-/**
- * @brief MainWindow::putData gera as informações, mensagens TCP, que serão produzidas e enviadas ao servidor.
- */
-void MainWindow::putData()
+void MainWindow::putData() // Função que gera os textos a ser enviados com a data, tempo e número aleatório
 {
+   int maxx = ui->maximo->value(); // Constante para valor máximo
+   int minn = ui->minimo->value(); // Constante para valor mínimo
+
   QDateTime datetime;
-  QString str,str1;
-  if(socket -> state() == QAbstractSocket::ConnectedState){
-      //int i = 0;
-      //while(i < 10){
+  QString str;
+  if(socket->state()== QAbstractSocket::ConnectedState){
+      datetime = QDateTime::currentDateTime();
+      str = "set "+
+          datetime.toString(Qt::ISODate)+
+          " "+
+          QString::number((qrand()%((maxx+1)-minn))+minn)+"\r\n"; // Geração do número aleatória de acordo com o intervalo
 
-        lcdNumber_Max();
-        lcdNumber_Min();
-        lcdNumber_Time();
-
-        datetime = QDateTime::currentDateTime();
-
-        str = "set "+
-            datetime.toString(Qt::ISODate)+
-            " "+
-            QString::number(Min + (qrand()%Max))+"\r\n";
-
-        ui -> textBrowser -> append(str);
-
-        qDebug() << str;
-
-        qDebug() << socket -> write(str.toStdString().c_str()) << " bytes written";
-
-        if(socket -> waitForBytesWritten(3000)){
+      qDebug() << str;
+      qDebug() << socket->write(str.toStdString().c_str()) << " bytes written";
+      if(socket->waitForBytesWritten(3000)){
         qDebug() << "wrote";
-
-        sleep(Time);
-
-
-
-        //i++;
-        }
-      //}
+      }
   }
+
+  ui->textBrowser->append(str); // Impressão do texto no textBrowser
+
 }
 
-/**
- * @brief MainWindow::~MainWindow é o destrutor da classe.
- */
 MainWindow::~MainWindow()
 {
   delete socket;
   delete ui;
 }
 
-/**
- * @brief MainWindow::on_pushButton_Connect_clicked passa um IP para realizar a conexão com o servidor
- */
 void MainWindow::on_pushButton_Connect_clicked()
 {
-    IP = ui -> lineEdit_TCP -> text();
-
-    qDebug() << IP;
-
-    tcpConnect();
-}
-
-/**
- * @brief MainWindow::lcdNumber_Max estabelece um valor máximo para intervalo de dados
- */
-void MainWindow::lcdNumber_Max()
-{
-    Max = ui -> lcdNumber_Max -> value();
-
-    qDebug() << Max;
-}
-
-/**
- * @brief MainWindow::lcdNumber_Min estabelece um valor máximo para intervalo de dados
- */
-void MainWindow::lcdNumber_Min()
-{
-    Min = ui -> lcdNumber_Min -> value();
-
-    qDebug() << Min;
-}
-
-/**
- * @brief MainWindow::lcdNumber_Time NÃO CONCLUÍDO
- */
-void MainWindow::lcdNumber_Time()
-{
-    Time = ui -> lcdNumber_Time -> value();
-
-    qDebug() << Time;
-}
-
-/**
- * @brief MainWindow::stop NÃO CONCLUÍDO
- * @return
- */
-bool MainWindow::stop()
-{
-    return ui -> pushButton_Stop -> isChecked();
-}
-
-/**
- * @brief MainWindow::on_pushButton_Start_clicked inicializa o recebimento das informações do putData()
- */
-void MainWindow::on_pushButton_Start_clicked()
-{
-    int i = 0;
-    bool checked = true;
-    while(true){
-        on_pushButton_Stop_clicked(checked);
-        if (checked == true){
-            putData();
-        }else{
-            return;
-        }
+    socket->connectToHost(ui->ip->text(),1234);
+    if(socket->waitForConnected(3000)){
+      qDebug() << "Connected";
+    }
+    else{
+      qDebug() << "Disconnected";
     }
 }
 
-/**
- * @brief MainWindow::on_pushButton_Stop_clicked NÃO CONCLUÍDO
- * @param checked
- */
-void MainWindow::on_pushButton_Stop_clicked(bool checked)
+void MainWindow::on_pushButton_Disconnect_clicked()
 {
-    checked = false;
+    qDebug() << "Disconnected";
+    close();
 }
+
+void MainWindow::on_pushButton_Start_clicked()
+{
+    int inicio = ui->timming->value(); // Cria uma variável para receber o valor do timing
+    timer = startTimer(inicio*1000); // Inicia o Timer de acordo com o escolhido em timing
+}
+
+void MainWindow::on_pushButton_Stop_clicked()
+{
+    killTimer(timer);
+}
+
